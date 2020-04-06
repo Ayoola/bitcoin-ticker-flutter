@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'coin_data.dart';
-import 'coin_data.dart';
+import 'package:flutter/cupertino.dart';
 import 'coin_data.dart';
 
 class PriceScreen extends StatefulWidget {
@@ -9,20 +8,38 @@ class PriceScreen extends StatefulWidget {
 }
 
 class _PriceScreenState extends State<PriceScreen> {
-  String dropdownValue = 'USD';
+  String currency = currenciesList[0];
+  int btcRate;
 
-  //creates a list of DropDownButton items from a list of String items.
-  List<DropdownMenuItem> getDropdownItems(List<String> items) {
-    List<DropdownMenuItem<String>> dropdownButtonItems = [];
+  //Creates a list of Text widgets from a List of String items
+  List<Text> getPickerItems(List<String> items) {
+    List<Text> pickerItems = [];
     for (String item in items) {
-      dropdownButtonItems.add(
-        DropdownMenuItem(
-          child: Text(item),
-          value: item,
-        ),
-      );
+      pickerItems.add(Text(item, style: TextStyle(color: Colors.white)));
     }
-    return dropdownButtonItems;
+    return pickerItems;
+  }
+
+  void getExchangeRate(c) async {
+    dynamic coinData = await CoinData().getCoinData(c);
+    if (coinData != null) {
+      double rate = coinData['rate'];
+      updateUIRate(rate);
+    } else {
+      print("Rate Limit Exceeded 😬");
+    }
+  }
+
+  void updateUIRate(rate) {
+    setState(() {
+      btcRate = rate.round();
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getExchangeRate(currency);
   }
 
   @override
@@ -46,7 +63,7 @@ class _PriceScreenState extends State<PriceScreen> {
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
                 child: Text(
-                  '1 BTC = ? USD',
+                  '1 BTC = $btcRate $currency',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 20.0,
@@ -61,14 +78,15 @@ class _PriceScreenState extends State<PriceScreen> {
             alignment: Alignment.center,
             padding: EdgeInsets.only(bottom: 30.0),
             color: Colors.lightBlue,
-            child: DropdownButton<String>(
-              value: dropdownValue,
-              onChanged: (String selectedValue) {
+            child: CupertinoPicker(
+              itemExtent: 32.0,
+              onSelectedItemChanged: (int selectedIndex) {
+                getExchangeRate(currenciesList[selectedIndex]);
                 setState(() {
-                  dropdownValue = selectedValue;
+                  currency = currenciesList[selectedIndex];
                 });
               },
-              items: getDropdownItems(currenciesList),
+              children: getPickerItems(currenciesList),
             ),
           ),
         ],
